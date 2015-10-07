@@ -1,4 +1,3 @@
-#' @describeIn newTree
 #' @export
 #' 
 newTree <-

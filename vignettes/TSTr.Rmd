@@ -1,7 +1,12 @@
 ---
-title: "Ternary Search Tree"
+title: "Ternary search trees for autocompletion and spell checking"
 date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
+output: 
+  rmarkdown::html_vignette:
+                includes:
+                  before_body: bannera.html
+                toc: yes
+                toc_depth: 3
 vignette: >
   %\VignetteIndexEntry{Ternary Search Tree}
   %\VignetteEngine{knitr::rmarkdown}
@@ -15,10 +20,13 @@ options(TSTr.print_min = 4L, TSTr.print_max = 4L)
 library(TSTr)
 ```
 
+# Ternary search tree
+
+## Introduction
 
 A __ternary search tree__ is a type of trie (sometimes called a prefix tree) where nodes are arranged in a manner similar to a binary search tree, but with up to three children rather than the binary tree's limit of two. Like other prefix trees, a ternary search tree can be used as an associative map structure with the ability for incremental string search.
 
-### Description
+## Description
 
 Each node of a ternary search tree stores a single character, an indicator and pointers to its three children conventionally named equal kid, lo kid and hi kid, which can also be referred respectively as middle (child), lower (child) and higher (child). The lists of class `tstTree` created in the package name this objects as:
 
@@ -42,7 +50,11 @@ One of the advantage of using ternary search trees over tries is that ternary se
 
 Searches in a ternary search tree are more efficient when the strings inserted are shuffled (not in alphabetical order).
 
-### Functions
+More information about ternary search trees can be found at [Wikipedia: Ternary Search Tree](https://en.wikipedia.org/wiki/Ternary_search_tree).
+
+## Functions
+
+### Create a new tree
 
 The function `newTree()` creates a new object of class `tstTree`. Takes as input a character vector or a file (.txt or .csv) with the strings to construct the tree, were each character will be a node. After processing all strings, it reports the total number of words and nodes in the tree.
 
@@ -54,43 +66,118 @@ stateTree <- newTree(states)
 str(stateTree)
 ```
 
+### Add strings to a tree
 
-
-The created tree can then be updated with more words with the function `updateTree()` to add a batch of words or with `addWord()` to add a single string. The name of the tree to be modified must be passed as an argument to both functions. `updateTree` also reports the number of strings added and the total number of nodes in the modified tree.
-
-Use `dimTree()` with a `tstTree` class object to know the dimensions of the tree. It returns a numeric vector where the first number is the total number of strings and the second is the total number of nodes.
+The created tree can then be updated with more strings with the function `addToTree()` to add a batch of strings or with `addWord()` to add a single string. The name of the tree to be modified must be passed as an argument to both functions. `addToTree` also reports the number of strings added and the total number of nodes in the modified tree.
 
 ```{r}
 # Add some Canada regions to the previous stateTree
 regions  <- c("Quebec", "Ontario", "Manitoba", "Saskatchewan", "Alberta", "British Columbia")
-US.CanadaTree <- updateTree(stateTree, regions)
+US.CanadaTree <- addToTree(stateTree, regions)
 
 # Add one more region
 US.CanadaTree <- addWord(US.CanadaTree, "Yukon")
+```
 
+### Tree dimensions
+
+Use `dimTree()` with a `tstTree` class object to know the dimensions of the tree. It returns a numeric vector where the first number is the total number of strings and the second is the total number of nodes.
+
+```{r}
 # View the final dimensions of the tree
 dimTree(US.CanadaTree)
 ```
 
-
+### Search a string
 
 To know if a particular string has been added to the tree use `searchWord()` with a `tstTree` class object and the string to look for. It returns TRUE or FALSE depending on whether or not the string is in the tree.
-
-Another way to search for words is the `completeWord()` function. It receives as input an incomplete string and returns all strings in the tree that begins exactly with that input string.
 
 ```{r}
 # Search a specific state
 searchWord(US.CanadaTree, "Alabama")
 searchWord(US.CanadaTree, "Baltimore")
+```
 
+# Autocompletion
+
+Autocomplete, or word completion, is a feature in which an application predicts the rest of a word a user is typing. Autocomplete speeds up human-computer interactions when it correctly predicts words being typed.
+
+## Complete a string
+
+Another way to search for words is the `completeWord()` function. It receives as input an incomplete string and returns all strings in the tree that begins exactly with that input string.
+
+```{r}
 # Complete strings: States and regions that begin with "A" and "Al"
 completeWord(US.CanadaTree, "A")
 completeWord(US.CanadaTree, "Al")
 ```
 
+# Spell checking
+
+There are 3 different approaches when implementing spell checking. All of them are based on Edit distance (Damerau-Levenshtein distance).
+The first one is the naive approach that searches recursively through the tree finding the terms with minimum edit distance. This exhaustive search is inordinately expensive.
+
+The other two approaches are Peter Norvig's and Symmetric Delete which are described below.
+
+## Peter Norvig
+
+Enumerates the possible corrections of a given word. It is common to talk of the edit distance between two words: the number of edits it would take to turn one into the other.
+
+For a word of length n, there will be n deletions, n-1 transpositions, 36n alterations, and 36(n+1) insertions, for a total of 74n+35 (of which a few are typically duplicates). And 126n+61 if uppercase letters are also used.
+Then, it searches through the tree all this variations, finding those within the specified edit distance.
+
+The literature on spelling correction claims that around 80\% of spelling errors are an edit distance of 1 from the target. For distance 2 the number of variations becomes (74n+35)^2 which makes PNcheck 3 orders of magnitude more expensive than SDcheck. Use `SDcheck` for distance 2 instead.
+
+More information can be found at [Peter Norvig: How to Write a Spelling Corrector](http://norvig.com/spell-correct.html).
+
+### PNcheck
+
+The `PNcheck()` function receives as input a pre-created ternary search tree and a misspelled string, and returns all strings in the tree with edit distance 1.
+
+```{r}
+# Peter Norvig spell corrector.
+PNcheck(US.CanadaTree, "Conecticut")
+PNcheck(US.CanadaTree, "Sorth Carolina", useUpper = TRUE)
+```
 
 
-More information about ternary search trees can be found at [Wikipedia – Ternary Search Tree](https://en.wikipedia.org/wiki/Ternary_search_tree).
+## Symmetric Delete Spelling Correction
 
+Symmetric Delete spell checking exploits the fact that the edit distance between two terms is symmetrical:
 
+- It generates all terms with an edit distance <= maxdist from the query term (trying to reverse the query term error) and checks them against all dictionary terms.
+
+- Generates all terms with an edit distance <= maxdist from each dictionary term (trying to create the query term error) and checks the query term against them.
+
+- Combines both and meet in the middle, by transforming the correct dictionary terms to erroneous strings, and transforming the erroneous input term to the correct strings.
+
+Because adding a char on the dictionary is equivalent to removing a char from the input string and vice versa, it is possible to restrict on both sides the transformation to deletes only.
+
+More information can be found at [Symmetric Delete Spelling Correction](http://blog.faroo.com/2012/06/07/improved-edit-distance-based-spelling-correction/).
+
+### SDkeeper
+
+Generates terms with an edit distance <= maxdist (deletes only) from each dictionary term and add them together with the original term to the dictionary. This has to be done only once during a pre-calculation step.
+
+The cost of this approach is the pre-calculation time and storage space of x deletes for every original dictionary entry, which is acceptable in most cases.
+
+By default creates an indexed data.table with deletions of the specified maximum distance. If `useTST = TRUE`, a ternary search tree is used instead.
+
+```{r}
+# Symmetric Delete pre-calculation step.
+US.CanadaDT <- SDkeeper(states, 2)
+US.CanadaTree <- SDkeeper(states, 1, useTST = TRUE)
+```
+
+### SDcheck
+
+Generate terms with an edit distance <= maxdist (deletes only) from the input term and search them in the dictionary (keeper).
+
+For a word of length n, an alphabet size of a and an edit distance of 1, there will be just n deletions, for a total of n terms at search time. This is three orders of magnitude less expensive than Peter Norvig's approach and language independent.
+
+```{r}
+# Symmetric Delete spell checking.
+SDcheck(US.CanadaDT, "rkansas", summarize = TRUE)
+SDcheck(US.CanadaTree, "Texas2")
+```
 

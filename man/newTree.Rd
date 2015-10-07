@@ -29,6 +29,6 @@ close(fileConn)
 enTree <- newTree("XMIwords.txt")
 }
 \seealso{
-\code{\link{updateTree}}
+\code{\link{addToTree}}
 }
 
