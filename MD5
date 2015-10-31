@@ -1,4 +1,4 @@
-0c337811f3573767496f41c9a42327ca *DESCRIPTION
+8e06aa44a258d6d037d7f3ec85bbf240 *DESCRIPTION
 b6f168d70e25314c7b776b6d267d520a *NAMESPACE
 1b53c67a4f26f9a79fe7815a51863e59 *R/Add.R
 e4154408d24e1b521e1dff60cef70abb *R/Addlist.R
@@ -57,7 +57,7 @@ daeb6743a5e628259b8f6631684a12fb *R/suggestions.R
 78688e6150a4df67d1d5b693da429361 *R/transpose.R
 99728e9feb59f427d0f81fe5d5c0cd76 *R/tstTree.R
 69b090f218b6d68ba4b9a95970cc11f3 *R/variations.R
-cb6c57d5386b07313a6897dc604a1e1e *build/TSTr.pdf
+c7910dfbbe65490823e71783ec7395e2 *build/TSTr.pdf
 6542354dc4402be6c8d9e2884f4918bc *build/vignette.rds
 90dd92dd3c93de7cd4214f1f0bf1b2ff *data/XMIwords.rda
 fea08fb7b1a4efbb8df2b0405135e999 *inst/doc/TSTr.R
